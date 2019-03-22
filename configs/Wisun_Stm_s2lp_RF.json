@@ -2,11 +2,19 @@
     "config": {
         "heap-size": {
              "help": "The amount of static RAM to reserve for nsdynmemlib heap",
-             "value": 100000
+             "value": 40000
         },
         "radio-type":{
             "help": "options are ATMEL, MCR20, SPIRIT1, S2LP",
             "value": "S2LP"
+        },
+        "vpn_server":{
+            "help": "vpn_server addres",
+            "value": "\"ocserv.mbedcloudtesting.com\""
+        },
+        "vpn_server_port":{
+            "help": "vpn_server port",
+            "value": 443
         },
         "backhaul-driver": {
             "help": "options are ETH, SLIP, EMAC",
@@ -25,7 +33,7 @@
             "value": "false"
         },
         "backhaul-mac": "{0x02, 0x00, 0x00, 0x00, 0x00, 0x01}",
-        "debug-trace": "false",
+        "debug-trace": "true",
         "backhaul-dynamic-bootstrap": true,
         "backhaul-prefix": "\"fd00:db8:ff1::\"",
         "backhaul-default-route": "\"::/0\"",
@@ -65,10 +73,10 @@
     "macros": ["MBEDTLS_USER_CONFIG_FILE=\"source/mbedtls_wisun_config.h\""],    
     "target_overrides": {
         "*": {
-            "target.network-default-interface-type": "ETHERNET",
+            "target.network-default-interface-type": "VPN",
             "nsapi.default-stack": "NANOSTACK",
             "mbed-trace.enable": 1,
-            "nanostack.configuration": "ws_border_router",
+            "nanostack.configuration": "nanostack_full",
             "platform.stdio-convert-newlines": true,
             "platform.stdio-baud-rate": 115200,
             "platform.stdio-buffered-serial": true,

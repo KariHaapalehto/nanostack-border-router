@@ -6,6 +6,8 @@
 #ifndef BORDERROUTER_TASKLET_H
 #define BORDERROUTER_TASKLET_H
 
+#include "nsapi_types.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -14,6 +16,7 @@ extern "C"
 /**
  * Initializes the backhaul driver. MUST be implemented by the application.
  */
+void backhaul_ws_driver_init(void (*backhaul_driver_status_cb)(nsapi_event_t status, intptr_t param));
 void backhaul_driver_init(void (*backhaul_driver_status_cb)(uint8_t, int8_t));
 
 /**
