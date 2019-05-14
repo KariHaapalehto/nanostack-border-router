@@ -15,6 +15,7 @@
 #include "MeshInterfaceNanostack.h"
 #include "EMACInterface.h"
 #include "EMAC.h"
+#include "mbedvpn.h"
 
 #ifdef  MBED_CONF_APP_DEBUG_TRACE
 #if MBED_CONF_APP_DEBUG_TRACE == 1
@@ -82,6 +83,16 @@ static void emac_link_cb(bool up)
     }
 }
 #endif
+
+void backhaul_ws_driver_init(void (*backhaul_ws_driver_status_cb)(nsapi_event_t status, intptr_t param))
+{
+    NetworkInterface *net = NetworkInterface::get_default_instance();
+    //net->attach(backhaul_ws_driver_status_cb);
+    //net->connect();
+    mbedvpn &vpn = mbedvpn::get_instance();
+    vpn.set_link_status_cb(backhaul_ws_driver_status_cb);
+    vpn.start();
+}
 
 /**
  * \brief Initializes the MAC backhaul driver.

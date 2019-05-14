@@ -430,7 +430,7 @@ static void borderrouter_tasklet(arm_event_s *event)
             br_tasklet_id = event->receiver;
 
             /* initialize the backhaul interface */
-            backhaul_driver_init(borderrouter_backhaul_phy_status_cb);
+            //backhaul_driver_init(borderrouter_backhaul_phy_status_cb);
 
             if (net_6lowpan_id < 0) {
                 tr_error("RF interface initialization failed");

@@ -28,6 +28,7 @@
 #include "sw_mac.h"
 #include "nwk_stats_api.h"
 #include "randLIB.h"
+#include "nsapi_types.h"
 #ifdef MBED_CONF_APP_CERTIFICATE_HEADER
 #include MBED_CONF_APP_CERTIFICATE_HEADER
 #endif
@@ -82,6 +83,7 @@ static uint8_t backhaul_prefix[16] = {0};
 /* Backhaul default route information */
 static route_info_t backhaul_route;
 static int8_t br_tasklet_id = -1;
+static int8_t vpn_id = -1;
 
 /* Network statistics */
 static nwk_stats_t nwk_stats;
@@ -98,6 +100,7 @@ static void wisun_interface_event_handler(arm_event_s *event);
 static void network_interface_event_handler(arm_event_s *event);
 static int backhaul_interface_down(void);
 static void borderrouter_backhaul_phy_status_cb(uint8_t link_up, int8_t driver_id);
+static void borderrouter_backhaul_phy_link_status_cb(nsapi_event_t status, intptr_t param);
 extern fhss_timer_t fhss_functions;
 
 typedef struct {
@@ -341,9 +344,10 @@ void border_router_tasklet_start(void)
     wisun_rf_init();
     protocol_stats_start(&nwk_stats);
 
-    eventOS_event_handler_create(
-        &borderrouter_tasklet,
-        ARM_LIB_TASKLET_INIT_EVENT);
+    br_tasklet_id = eventOS_event_handler_create(
+                        &borderrouter_tasklet,
+                        ARM_LIB_TASKLET_INIT_EVENT);
+
 }
 
 static int backhaul_interface_up(int8_t driver_id)
@@ -462,7 +466,12 @@ static void borderrouter_tasklet(arm_event_s *event)
         case ARM_LIB_TASKLET_INIT_EVENT:
             br_tasklet_id = event->receiver;
             eth_network_data_init();
+            vpn_id = init_tunnel();
+#if 0
             backhaul_driver_init(borderrouter_backhaul_phy_status_cb);
+#else
+            backhaul_ws_driver_init(borderrouter_backhaul_phy_link_status_cb);
+#endif
             mesh_network_up();
             eventOS_event_timer_request(9, ARM_LIB_SYSTEM_TIMER_EVENT, br_tasklet_id, 20000);
             break;
@@ -498,6 +507,8 @@ static void borderrouter_backhaul_phy_status_cb(uint8_t link_up, int8_t driver_i
         .event_data = driver_id
     };
 
+    printf("borderrouter_backhaul_phy_status_cb");
+
     if (link_up) {
         event.event_id = NR_BACKHAUL_INTERFACE_PHY_DRIVER_READY;
     } else {
@@ -506,6 +517,44 @@ static void borderrouter_backhaul_phy_status_cb(uint8_t link_up, int8_t driver_i
 
     eventOS_event_send(&event);
 }
+
+static void borderrouter_backhaul_phy_link_status_cb(nsapi_event_t status, intptr_t param)
+{
+    //printf("Connection status changed: ");
+    arm_event_s event = {
+        .sender = br_tasklet_id,
+        .receiver = br_tasklet_id,
+        .priority = ARM_LIB_MED_PRIORITY_EVENT,
+        .event_type = APPLICATION_EVENT,
+        .event_data = vpn_id
+    };
+
+    switch(param) {
+        case NSAPI_STATUS_LOCAL_UP:
+            printf("mbedvpn NSAPI_STATUS_LOCAL_UP\r\n");
+            break;
+        case NSAPI_STATUS_GLOBAL_UP:
+            printf("mbedvpn NSAPI_STATUS_GLOBAL_UP\r\n");
+            break;
+        case NSAPI_STATUS_DISCONNECTED:
+            printf("mbedvpn NSAPI_STATUS_DISCONNECTED\r\n");
+            event.event_id = NR_BACKHAUL_INTERFACE_PHY_DOWN;
+            break;
+        case NSAPI_STATUS_CONNECTING:
+            printf("mbedvpn NSAPI_STATUS_CONNECTING\r\n");
+            event.event_id = NR_BACKHAUL_INTERFACE_PHY_DRIVER_READY;
+            break;
+        default:
+            printf("mbedvpn Not supported");
+            break;
+    }
+
+
+    printf("borderrouter_backhaul_phy_link_status_cb");
+
+    eventOS_event_send(&event);
+}
+
 
 // ethernet interface
 static void network_interface_event_handler(arm_event_s *event)
